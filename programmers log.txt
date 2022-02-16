@@ -1,0 +1,290 @@
+				Project Log - Starbucks Menu Query
+Project Start: 1/6/2022
+Project End: --
+
+Deliverables: Serise of tables of my most optimal (- calories, + caffine) orders
+Learning Outcomes: Pratice ETL, Joins, short query scripts 
+
+Experiential Learnigns: 
+2/12/22 - 3:30 AM -- cleaning data w/sql, what happens when you work on unclean data, 
+brute-force reformatting, Data types
+
+Primary technology: SQL, Postgresql/pgAdmin 4
+
+Source: Kaggle (https://www.kaggle.com/starbucks/starbucks-menu)
+
+
+I. Set-up, Prep, Plan - 1/8/22 8:15 pm
+I manually started a small database from csv files of nutritional data for 
+starbucks menu items. It took me way too long to figure out what to do in part because
+I forgot that my previous queries used existing db's. 
+
+1/17/22 4:15 pm
+I believe this querey requires a full join, essentially I need to combine all the 
+relevant data from the drinks menu and food menu...It could be a left/right join based
+on the fact that the food menu has a bunch of datapoints that I won't need...
+The join would be based on calories, fat, protein, carbs and caffine from the drinks
+and calories, fat, protein, carbs from the food. 
+
+1/21/22 11:35 pm
+I've run into an issue scripting the joins for my query. It occurs to me that I'm
+attempting a join on a non-unique value (calories) because both tables had that
+measure, but right now all of the relevant tables includ non-unique float values.
+I need to create a unique integer id that I can center for the join.
+
+1/23/22 9:55 am
+After spinning my wheels in frustration, I've decided to start over creating another
+set of tables on the database because I've so confused the structure and syntax.
+
+2/5/22 11:05 am
+I'm good on creating the db/tables, I was able to copy the data into the tables with a previous
+script, but when I went to write the join, I realized I needed an "ID" value for a primary key.
+For whatever reason, inserting this value eludes me so I'm (...)
+
+2/7/22 4:30 pm
+I'm not sure where the previous entry was going, but I eventually realized that 
+it was easier to insert the required column using the interface, instead of trying
+to write a new script. I have my primary key, but a question remains: am I going to
+be able to run the queries I think I want because the tables don't share any items
+but the more I think about it, the more I think that's a dumb question because 
+that's the point and purpose of SQL. I'm not performing processees on the tables,
+I'm pulling info from them based on pre-scripted conditions. 
+
+With that issue settled, it's time to move on to the query and analysis
+
+ 
+II. Analysis 5:45 pm
+
+
+
+
+PART 1: CLEANING
+
+
+
+
+
+
+Query Drafts -
+
+1. Caffine Content:
+SELECT beverage
+FROM public.drinks
+ORDER BY caffeine DESC
+LIMIT 5 
+
+This produces a less-than-helpful output:
+"Iced Brewed Coffee (With Milk & Classic Syrup)"
+"TazoÂ® Tea"
+"TazoÂ® Tea"
+"TazoÂ® Tea"
+"TazoÂ® Tea"
+
+I need to be more specific in this query.
+
+
+Expanding the query produces an interesting result:
+--------------------------------------------------------------
+SELECT beverage, beverage_prep, caffeine
+FROM public.drinks
+ORDER BY caffeine DESC
+LIMIT 50 
+
+
+"Iced Brewed Coffee (With Milk & Classic Syrup)"	"2% Milk"	[null]
+"Shaken Iced TazoÂ® Tea (With Classic Syrup)"	"Venti"	"Varies"
+"TazoÂ® Tea"	"Grande"	"Varies"
+"Shaken Iced TazoÂ® Tea Lemonade (With Classic Syrup)"	"Grande"	"Varies"
+...
+"Mocha"	"Grande Nonfat Milk"	"95"
+"TazoÂ® Chai Tea Latte"	"Grande Nonfat Milk"	"95"
+"Coffee"	"Venti Nonfat Milk"	"95"
+"Coffee"	"Whole Milk"	"95"
+"Coffee"	"Soymilk"	"95"
+"Coffee"	"Grande Nonfat Milk"	"95"
+...
+"TazoÂ® Chai Tea Latte"	"Soymilk"	"95"
+"Caramel"	"Grande Nonfat Milk"	"90"
+
+--------------------------------------------------------------
+The following query drafts are attempts to clarify what data I hope to collect from the 
+db. If I had realized that my data was not clean, I would have had fewer issues, but this
+is a learning experience, that's the whole point. 
+
+SELECT beverage, beverage_prep, caffeine
+FROM public.drinks
+WHERE caffeine LIKE '%[0-9]%'
+
+Question:This query returned no rows?
+Answer: This query was backwards, it excluded everything?
+
+
+SELECT beverage, beverage_prep, caffeine
+FROM public.drinks
+WHERE IsNumeric(caffeine) = 1
+
+
+Answer: the caffeine column is varchar, not int or numeric
+
+--------------------------------------------------------------
+SELECT beverage, beverage_prep, caffeine
+FROM public.drinks
+WHERE caffeine NOT LIKE '%[^0-9]%' and caffeine != 'varies' and caffeine != 'Varies' and caffeine != ''
+ORDER BY caffeine DESC
+
+There seems to be some grouping happening? I'm not sure why the caffine seems to be
+grouped (in descending order) by first digit:
+95, 95, 94, 94, 90...300, 300, 30, 200, 200, 20...10...
+
+
+SELECT beverage, beverage_prep, caffeine
+FROM public.drinks
+WHERE caffeine NOT LIKE '%[^0-9]%' 
+and caffeine != 'varies' 
+and caffeine != 'Varies' 
+and caffeine != ''
+and caffeine != '0'
+ORDER BY caffeine DESC
+
+Actually this works too:
+
+SELECT beverage, beverage_prep, caffeine
+FROM public.drinks
+WHERE caffeine != 'varies' 
+and caffeine != 'Varies' 
+and caffeine != ''
+and caffeine != '0'
+ORDER BY caffeine DESC
+
+The 'NOT LIKE...' was consice, but not inclusive; it didn't account for the "varies"
+
+Looking at the 'beverage' category, it looks like there are a number of drinks that
+need to be cleaned because (for some reason) the strings contain special characters
+that did not translate into the appropriate formatt in the CSV. I also should have 
+explored the data before I started analysis. If I had run this in VS Code, I could
+probably clean/explore the data using python and then run the SQL query in the same
+editor, I can do that the second time arround. I need to revisit this and the twitter
+project again any way. 
+
+It took way too long, but I finally got SQL to show me the beverage categories,
+now I just need to determine what alterations need to be made.
+
+Frappuccino (bev_cat), blended coffee (drink/beverage), Caramel (flavor) w/o whip
+"Caramel frappuccino"; w/o whipped cream seems to be the default
+
+I've been focused on the "beverage" column, I'll have to organize the same process
+on the "beverage_category" column
+
+COMPLICATION:
+the beverage preparation Lists the "size milk" for the first iteration and then only
+the milk option for the same size, before listing the "next size milk"through all 4
+sizes. I might have to manually repeat the size for all milk options (non-fat, 2%,
+soy...though I also happen to know they offer whole milk, and since this dataset
+was generated they've expanded the plant-based offerings to include almond, coconut -
+in some locations/seasons, and oat milk).
+...I bet that's why the 'SORT BY caffeine DESC' created that wierd group effect...
+
+
+HOLY SHIT...Thank you grow with google. The sorting problem is caused by the table I 
+created. Because the nutritional values were different units (g, mg, %DV) I encoded them
+all as VARCHAR, as such, SQL sorts them based on the first value as I observed. It doesn't
+know to treat caffiene as a numerical value.
+
+This is a valuable lesson on cleaning data sets, if I had evaluated each of the measures I
+intend to use, I *might* have noticed that it could be an integer or float, thus avoiding
+the blanket use of VARCHAR data type. 
+
+
+
+2/14/22 1:30 PM
+
+I decided to get over my need to understand how to automate this task, and just do it. 
+I've opened the editor for the table and I'm manually changing the drink/category names.
+I did myself a service by creating the ID before hand, because according to the documentation
+db's are read only without the primary key. I still want to figure out out to automate
+that process, but I think I can do that later, putting the accent over the "e" in caffe.
+
+Okay, the data is now clean, at that level at least, I still need to change the data types for
+caffeine and the percentages (calcium, iron, vitamins, etc.) but I can do that later. Also,
+while creating this db, it seems I made calories and "id" a primary key. I think I can drop
+'ID' because the table is numbered, but I'll have to check that before I start making changes.
+
+Sidnote: it looks like pgadmin uses UPDATE/SET instead of REPLACE. It uses the 'ID' number to
+identify what get's changed. I guess that makes sense because if the only identifyer is the
+value that's being changed, I'd imagine that's a great way to loose track of a value.
+
+
+
+
+2/15/22 3:30 PM
+
+I actually think I need to keep the ID...I don't know what I was thinking, of course the table is
+numbered, that isn't a fixed identifier. I do need to remove the PK status from calories. I get
+what I was trying to do...but that was kinda dumb. 
+
+Removed calories as a PK, leaving "ID" as the only one.
+--Right cliked the table, properties, constraints, deleted the primary key data that was there
+--and selected the column I wanted there.
+
+Next up: changing the data type on caffiene.
+
+	ERROR:  invalid input syntax for type numeric: "varies"
+
+...this is how we got here.
+
+In order to make the caffiene column numeric, I have to do something with the "varies" values.
+
+
+--Cleaning
+
+--1. Caffeine:
+SELECT beverage, beverage_prep, caffeine
+FROM public.drinks
+WHERE caffeine = 'varies' 
+ or caffeine = 'Varies' 
+ or caffeine = ''
+--there are 22 tea drinks (and 1 smoothie) with "varies" as
+--it's caffiene value
+
+UPDATE public.drinks
+SET caffeine = 0
+WHERE caffeine = 'varies' 
+or caffeine = 'Varies' 
+or caffeine = '' 
+
+ALTER TABLE public.drinks
+ALTER COLUMN caffeine TYPE numeric USING caffeine :: numeric;
+
+Caffeine is now numeric and sorts in order. 
+
+
+
+
+
+
+PART 2. QUERY - DRINKS
+
+
+The queries are pretty straight forward, I might have to manually add the drink size.
+The milk prep is grouped by size, or I could try to write logic based on the count,
+the first calorie value is the short, second is tall, third grande, and fourth venti...
+
+
+EURIKA!!
+
+
+
+
+
+
+
+
+
+
+
+
+
+Notes:
+#table refers to a local (visible to only the user who created it) temporary table.
+##table refers to a global (visible to all users) temporary table.
+@variableName refers to a variable which can hold values depending on its type.
