@@ -1,6 +1,6 @@
 				Project Log - Starbucks Menu Query
 Project Start: 1/6/2022
-Project End: --
+Project End: 2/15/2022
 
 Deliverables: Serise of tables of my most optimal (- calories, + caffine) orders
 Learning Outcomes: Pratice ETL, Joins, short query scripts 
@@ -12,7 +12,7 @@ brute-force reformatting, Data types
 Primary technology: SQL, Postgresql/pgAdmin 4
 
 Source: Kaggle (https://www.kaggle.com/starbucks/starbucks-menu)
-
+------------------------------------------------------------------------------------------
 
 I. Set-up, Prep, Plan - 1/8/22 8:15 pm
 I manually started a small database from csv files of nutritional data for 
@@ -51,19 +51,12 @@ that's the point and purpose of SQL. I'm not performing processees on the tables
 I'm pulling info from them based on pre-scripted conditions. 
 
 With that issue settled, it's time to move on to the query and analysis
-
+------------------------------------------------------------------------------------------
  
 II. Analysis 5:45 pm
 
 
-
-
 PART 1: CLEANING
-
-
-
-
-
 
 Query Drafts -
 
@@ -84,7 +77,7 @@ I need to be more specific in this query.
 
 
 Expanding the query produces an interesting result:
---------------------------------------------------------------
+-------------------------------------------------------
 SELECT beverage, beverage_prep, caffeine
 FROM public.drinks
 ORDER BY caffeine DESC
@@ -106,7 +99,7 @@ LIMIT 50
 "TazoÂ® Chai Tea Latte"	"Soymilk"	"95"
 "Caramel"	"Grande Nonfat Milk"	"90"
 
---------------------------------------------------------------
+--------------------------------------------------------
 The following query drafts are attempts to clarify what data I hope to collect from the 
 db. If I had realized that my data was not clean, I would have had fewer issues, but this
 is a learning experience, that's the whole point. 
@@ -126,7 +119,7 @@ WHERE IsNumeric(caffeine) = 1
 
 Answer: the caffeine column is varchar, not int or numeric
 
---------------------------------------------------------------
+---------------------------------------------------------
 SELECT beverage, beverage_prep, caffeine
 FROM public.drinks
 WHERE caffeine NOT LIKE '%[^0-9]%' and caffeine != 'varies' and caffeine != 'Varies' and caffeine != ''
@@ -155,7 +148,7 @@ and caffeine != 'Varies'
 and caffeine != ''
 and caffeine != '0'
 ORDER BY caffeine DESC
-
+------------------------------------------------------
 The 'NOT LIKE...' was consice, but not inclusive; it didn't account for the "varies"
 
 Looking at the 'beverage' category, it looks like there are a number of drinks that
@@ -236,7 +229,7 @@ In order to make the caffiene column numeric, I have to do something with the "v
 
 
 --Cleaning
-
+------------------------------------------------------------
 --1. Caffeine:
 SELECT beverage, beverage_prep, caffeine
 FROM public.drinks
@@ -254,11 +247,9 @@ or caffeine = ''
 
 ALTER TABLE public.drinks
 ALTER COLUMN caffeine TYPE numeric USING caffeine :: numeric;
-
+--------------------------------------------------------------
 Caffeine is now numeric and sorts in order. 
-
-
-
+---------------------------------------------------------------------------------------------------------
 
 
 
@@ -271,6 +262,9 @@ the first calorie value is the short, second is tall, third grande, and fourth v
 
 
 EURIKA!!
+--
+
+END
 
 
 
@@ -282,8 +276,7 @@ EURIKA!!
 
 
 
-
-
+------------
 Notes:
 #table refers to a local (visible to only the user who created it) temporary table.
 ##table refers to a global (visible to all users) temporary table.
